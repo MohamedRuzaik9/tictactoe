@@ -1,11 +1,10 @@
-// ============================================================================
-// App Entry & Home Screen (theme + navigation)
-// Larger title + XO logo for better visual balance.
-// ============================================================================
+
 
 import 'package:flutter/material.dart';
 import 'core/persistence.dart';
 import 'ui/game_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,7 +69,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         centerTitle: true,
         title: const Text(
-          'Tic-Tac-Toe',
+          'Tic Tac Toe',
           style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
       ),
@@ -85,7 +84,7 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 24),
 
               const Text(
-                'You are X . AI is O',
+                'You play as X, AI plays as O',
                 style: TextStyle(fontSize: 16, color: Colors.white70),
               ),
               const SizedBox(height: 20),
@@ -147,7 +146,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SizedBox(height: 28), 
+              const SizedBox(height: 20), 
               SizedBox(
                   width: 360,
                   child: OutlinedButton.icon(
@@ -199,20 +198,19 @@ class _XOLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: const [
+      children: [
         Text(
           'X',
-          style: TextStyle(
-            fontSize: 72,
+          style: GoogleFonts.permanentMarker(
+            fontSize: 96,
             fontWeight: FontWeight.w900,
             color: Colors.redAccent,
           ),
         ),
-        SizedBox(width: 26),
         Text(
           'O',
-          style: TextStyle(
-            fontSize: 72,
+          style: GoogleFonts.permanentMarker(
+            fontSize: 96,
             fontWeight: FontWeight.w900,
             color: Colors.lightBlueAccent,
           ),
