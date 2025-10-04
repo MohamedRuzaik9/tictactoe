@@ -1,3 +1,6 @@
+// Student Name : Mohamed Ruzaik
+// Student ID   : 10686380
+
 import 'package:flutter/material.dart';
 import 'package:tic_tac_toe/main.dart';
 import '../core/ai.dart';
@@ -5,6 +8,7 @@ import '../core/game_logic.dart';
 import '../core/game_models.dart';
 import '../core/persistence.dart';
 
+// --- SECTION: Game Screen Widget -------------------------------------------
 class GameScreen extends StatefulWidget {
   final AIDifficulty difficulty;
   final StatsStore store;
@@ -14,6 +18,7 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
+// --- SECTION: State & Lifecycle --------------------------------------------
 class _GameScreenState extends State<GameScreen> {
   late GameState state;
   Stats stats = const Stats();
@@ -118,6 +123,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   @override
+// --- SUBSECTION: Build Method ----------------------------------------------
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final accentO = const Color(0xFF10B3E6);
@@ -134,7 +140,7 @@ class _GameScreenState extends State<GameScreen> {
         resultTint = const Color(0xFF7F1D1D);
       } else {
         resultText = 'DRAW!';
-        resultTint = null;
+        resultTint = const Color(0xFFFFB300);
       }
     }
 
@@ -144,7 +150,7 @@ class _GameScreenState extends State<GameScreen> {
         centerTitle: true,
         title: Text(
           '${_difficultyLabel()} Mode',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 26),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -171,7 +177,7 @@ class _GameScreenState extends State<GameScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
-                    resultText!,
+                    resultText,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
@@ -293,6 +299,7 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                 ),
               ] else ...[
+                SizedBox(height: 40),
                 SizedBox(
                   width: 360,
                   child: Row(
@@ -321,7 +328,7 @@ class _GameScreenState extends State<GameScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 18),
                 SizedBox(
                   width: 360,
                   child: FilledButton.icon(
