@@ -270,6 +270,7 @@ class _GameScreenState extends State<GameScreen> {
 
               // ----- Buttons -----
               if (state.isComplete) ...[
+                SizedBox(height: 40),
                 SizedBox(
                   width: 360,
                   child: Row(
@@ -328,7 +329,7 @@ class _GameScreenState extends State<GameScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: 360,
                   child: FilledButton.icon(
