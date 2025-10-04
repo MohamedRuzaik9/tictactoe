@@ -28,6 +28,7 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
+  // --- actions ---
   void _restart() => setState(() => state = GameState.initial());
 
   Future<void> _resetStats() async {
@@ -105,33 +106,46 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  String _difficultyLabel() {
+    switch (widget.difficulty) {
+      case AIDifficulty.easy:
+        return 'Easy';
+      case AIDifficulty.medium:
+        return 'Medium';
+      case AIDifficulty.hard:
+        return 'Hard';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final accentO = const Color(0xFF10B3E6);
 
-    // ——— Result pill setup ———
-    String? label;
-    Color pillTint = Colors.transparent;
+    String? resultText;
+    Color? resultTint;
     if (state.isComplete) {
       final w = checkWinner(state);
       if (w == Player.x) {
-        label = 'YOU WIN!';
-        pillTint = const Color(0xFF1B5E20); // dark green
+        resultText = 'YOU WIN!';
+        resultTint = const Color(0xFF1B5E20);
       } else if (w == Player.o) {
-        label = 'YOU LOSE!';
-        pillTint = const Color(0xFF7F1D1D); // muted dark red
+        resultText = 'YOU LOSE!';
+        resultTint = const Color(0xFF7F1D1D);
       } else {
-        label = 'DRAW!';
-        pillTint = Colors.grey.shade700; // grey for draw
+        resultText = 'DRAW!';
+        resultTint = null;
       }
     }
 
     return Scaffold(
-      // solid background; set the global color in main.dart if you want a site-wide change
       backgroundColor: cs.surface,
       appBar: AppBar(
-        title: null, // no "Game" text
+        centerTitle: true,
+        title: Text(
+          '${_difficultyLabel()} Mode',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -143,30 +157,32 @@ class _GameScreenState extends State<GameScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             children: [
-              // ——— Result pill (only when finished) ———
-              if (label != null)
+              if (resultText != null)
                 Container(
+                  margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 18,
                     vertical: 10,
                   ),
-                  margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: pillTint.withValues(alpha: 0.24),
+                    color: (resultTint ?? Colors.transparent).withValues(
+                      alpha: resultTint == null ? 0.0 : 0.24,
+                    ),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
-                    label!,
+                    resultText!,
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
                       letterSpacing: 1.0,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
 
-              // ——— Board (always visible) ———
+              // ----- 3x3 Board -----
               SizedBox(
                 width: 360,
                 child: AspectRatio(
@@ -195,12 +211,11 @@ class _GameScreenState extends State<GameScreen> {
                               ? accentO
                               : cs.primary;
 
-                          // Highlight winning/losing line after game ends
+                          // highlight winning/losing line
                           if (state.isComplete) {
                             final winner = checkWinner(state);
                             if (winner != null) {
-                              // Get all winning positions
-                              final lines = [
+                              const lines = [
                                 [0, 1, 2],
                                 [3, 4, 5],
                                 [6, 7, 8],
@@ -213,19 +228,12 @@ class _GameScreenState extends State<GameScreen> {
                               final winningLine = lines.firstWhere(
                                 (line) =>
                                     line.every((p) => state.board[p] == winner),
-                                orElse: () => [],
+                                orElse: () => <int>[],
                               );
-
                               if (winningLine.contains(i)) {
-                                if (winner == Player.x) {
-                                  textColor = Colors
-                                      .greenAccent
-                                      .shade400; // green for user win
-                                } else {
-                                  textColor = Colors
-                                      .redAccent
-                                      .shade200; // red for AI win
-                                }
+                                textColor = (winner == Player.x)
+                                    ? const Color(0xFF22C55E) // green win
+                                    : const Color(0xFFEF4444); // red lose
                               }
                             }
                           }
@@ -252,10 +260,9 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 18),
 
-              const SizedBox(height: 16),
-
-              // ——— Buttons ———
+              // ----- Buttons -----
               if (state.isComplete) ...[
                 SizedBox(
                   width: 360,
@@ -314,7 +321,7 @@ class _GameScreenState extends State<GameScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 SizedBox(
                   width: 360,
                   child: FilledButton.icon(
@@ -322,7 +329,7 @@ class _GameScreenState extends State<GameScreen> {
                     label: const Text('Reset Stats'),
                     onPressed: _resetStats,
                     style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
+                      minimumSize: const Size.fromHeight(44),
                     ),
                   ),
                 ),
@@ -336,7 +343,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
-// ------- grid painter -------
+// --- Grid Painter ---
 class _GridPainter extends CustomPainter {
   final Color gridColor;
   final double stroke;
