@@ -63,7 +63,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(centerTitle: true, title: const Text('Tic-Tac-Toe')),
