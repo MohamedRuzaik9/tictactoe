@@ -9,20 +9,25 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
+    // Dark, modern palette for the whole site
     return MaterialApp(
       title: 'Tic-Tac-Toe',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        colorSchemeSeed: const Color(0xFF6C63FF),
+        // soft violet seed, subtle and consistent
+        colorSchemeSeed: const Color(0xFF7C66FF),
       ),
       home: const HomePage(),
     );
   }
 }
+
+enum AIDifficulty { easy, medium, hard }
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -58,6 +63,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(centerTitle: true, title: const Text('Tic-Tac-Toe')),
       body: Center(
@@ -65,22 +72,20 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              const Text(
-                'You are X · AI is O',
-                style: TextStyle(fontSize: 14, color: Colors.white70),
-              ),
+              const Text('You are X · AI is O',
+                  style: TextStyle(fontSize: 14, color: Colors.white70)),
               const SizedBox(height: 18),
 
-              // stat cards centered
+              // Centered stat cards (dark borders)
               Align(
                 alignment: Alignment.center,
                 child: SizedBox(
                   width: 360,
                   child: Row(
                     children: [
-                      _statCard('Wins', stats.wins, const Color(0xFF1B5E20)), // dark green
-                      _statCard('Losses', stats.losses, const Color.fromARGB(255, 127, 29, 29)), // dark red
-                      _statCard('Draws', stats.draws, Colors.grey.shade700), // dark grey
+                      _statCard('Wins',   stats.wins,   const Color(0xFF1B5E20)), // dark green
+                      _statCard('Losses', stats.losses, const Color(0xFF7F1D1D)), // dark red
+                      _statCard('Draws',  stats.draws,  Colors.grey.shade700),    // dark grey
                     ],
                   ),
                 ),
@@ -93,9 +98,9 @@ class _HomePageState extends State<HomePage> {
 
               SegmentedButton<AIDifficulty>(
                 segments: const [
-                  ButtonSegment(value: AIDifficulty.easy, label: Text('Easy')),
+                  ButtonSegment(value: AIDifficulty.easy,   label: Text('Easy')),
                   ButtonSegment(value: AIDifficulty.medium, label: Text('Medium')),
-                  ButtonSegment(value: AIDifficulty.hard, label: Text('Hard')),
+                  ButtonSegment(value: AIDifficulty.hard,   label: Text('Hard')),
                 ],
                 selected: {difficulty},
                 onSelectionChanged: (s) => setState(() => difficulty = s.first),
@@ -109,16 +114,19 @@ class _HomePageState extends State<HomePage> {
                   icon: const Icon(Icons.play_arrow_rounded),
                   label: const Text('Play'),
                   style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52)),
+                    minimumSize: const Size.fromHeight(52),
+                  ),
                   onPressed: () async {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            GameScreen(difficulty: difficulty, store: store),
+                        builder: (_) => GameScreen(
+                          difficulty: difficulty,
+                          store: store,
+                        ),
                       ),
                     );
-                    await _loadStats();
+                    await _loadStats(); // refresh on return
                   },
                 ),
               ),
@@ -129,7 +137,8 @@ class _HomePageState extends State<HomePage> {
                   icon: const Icon(Icons.refresh),
                   label: const Text('Reset Stats'),
                   style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52)),
+                    minimumSize: const Size.fromHeight(52),
+                  ),
                   onPressed: _resetStats,
                 ),
               ),
@@ -153,7 +162,8 @@ class _HomePageState extends State<HomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text('$value',
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+                style:
+                    const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text(label, style: const TextStyle(fontSize: 12)),
           ],

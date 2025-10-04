@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:tic_tac_toe/main.dart';
 import '../core/ai.dart';
 import '../core/game_logic.dart';
 import '../core/game_models.dart';
 import '../core/persistence.dart';
-
-enum AIDifficulty { easy, medium, hard }
 
 class GameScreen extends StatefulWidget {
   final AIDifficulty difficulty;
@@ -41,7 +40,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _tap(int r, int c) async {
-    if (!mounted || !isValidMove(state, r, c)) return;
+    if (!mounted || !isValidMove(state, r, c) || state.isComplete) return;
     setState(() => state = applyMove(state, r, c));
     await _aiTurnIfNeeded();
   }
@@ -54,15 +53,9 @@ class _GameScreenState extends State<GameScreen> {
     if (!state.isComplete && state.current == Player.o) {
       List<int>? mv;
       switch (widget.difficulty) {
-        case AIDifficulty.easy:
-          mv = easyMove(state);
-          break;
-        case AIDifficulty.medium:
-          mv = medium.move(state);
-          break;
-        case AIDifficulty.hard:
-          mv = hardMove(state);
-          break;
+        case AIDifficulty.easy:   mv = easyMove(state);    break;
+        case AIDifficulty.medium: mv = medium.move(state); break;
+        case AIDifficulty.hard:   mv = hardMove(state);    break;
       }
       if (mv != null) {
         final m = mv;
@@ -97,59 +90,8 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  Widget _resultView({required String title, required Color? tint}) {
-    final cs = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: cs.surface,
-      body: Stack(
-        children: [
-          if (tint != null)
-            Positioned.fill(
-              child: ColoredBox(color: tint.withValues(alpha: 0.18)),
-            ),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(28),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      FilledButton.icon(
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: const Text('Play Again'),
-                        onPressed: _restart,
-                      ),
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.home_outlined),
-                        label: const Text('Back to Home'),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _undoTwo() {
+    if (state.isComplete) return;
     if (state.moveLog.length >= 2) {
       setState(() => state = undo(state));
       setState(() => state = undo(state));
@@ -158,111 +100,138 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final accentO = const Color(0xFF10B3E6);
 
-    // Show results with tint backgrounds
+    // ——— Result pill setup ———
+    String? label;
+    Color pillTint = Colors.transparent;
     if (state.isComplete) {
-      final winner = checkWinner(state);
-      if (winner == Player.x) {
-        return _resultView(title: 'YOU WIN!', tint: const Color(0xFF1B5E20)); // dark green
-      } else if (winner == Player.o) {
-        return _resultView(title: 'YOU LOSE!', tint: const Color(0xFFB71C1C)); // dark red
+      final w = checkWinner(state);
+      if (w == Player.x) {
+        label = 'YOU WIN!';
+        pillTint = const Color(0xFF1B5E20); // dark green
+      } else if (w == Player.o) {
+        label = 'YOU LOSE!';
+        pillTint = const Color(0xFF7F1D1D); // muted dark red
       } else {
-        return _resultView(title: 'DRAW!', tint: null);
+        label = 'DRAW!';
+        pillTint = Colors.grey.shade700;    // grey for draw
       }
     }
 
     return Scaffold(
+      // solid background; set the global color in main.dart if you want a site-wide change
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        title: null,
+        title: null, // no "Game" text
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
           tooltip: 'Back',
         ),
       ),
-      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Center(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              children: [
-                // stats row
-                Align(
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    width: 360,
-                    child: Row(
-                      children: [
-                        _statCard('Wins', stats.wins, const Color(0xFF1B5E20)),
-                        _statCard('Losses', stats.losses, const Color(0xFFB71C1C)),
-                        _statCard('Draws', stats.draws, Colors.grey.shade700),
-                      ],
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            children: [
+              // ——— Result pill (only when finished) ———
+              if (label != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: pillTint.withValues(alpha: 0.24),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    label!,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 1.0,
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 16),
-                const Text(
-                  'You are X · AI is O',
-                  style: TextStyle(fontSize: 14, color: Colors.white70),
-                ),
-                const SizedBox(height: 16),
-
-                // 3x3 grid
-                SizedBox(
-                  width: 320,
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: Stack(
-                      children: [
-                        CustomPaint(
-                          size: Size.infinite,
-                          painter: _GridPainter(
-                            gridColor: Colors.white.withValues(alpha: 0.25),
-                            stroke: 2.0,
-                            outerStroke: 2.0,
-                          ),
+              // ——— Board (always visible) ———
+              SizedBox(
+                width: 360,
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Stack(
+                    children: [
+                      CustomPaint(
+                        size: Size.infinite,
+                        painter: _GridPainter(
+                          gridColor: Colors.white.withValues(alpha: 0.25),
+                          stroke: 2.0,
+                          outerStroke: 2.0,
                         ),
-                        GridView.builder(
-                          itemCount: 9,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                          ),
-                          itemBuilder: (_, i) {
-                            final r = i ~/ 3, c = i % 3;
-                            final v = state.board[i];
-                            return InkWell(
-                              onTap: () => _tap(r, c),
-                              child: Center(
-                                child: AnimatedDefaultTextStyle(
-                                  duration: const Duration(milliseconds: 120),
-                                  style: TextStyle(
-                                    fontSize: 58,
-                                    fontWeight: FontWeight.w900,
-                                    color: v == Player.o
-                                        ? accentO
-                                        : Theme.of(context).colorScheme.primary,
-                                  ),
-                                  child: Text(
-                                      v == null ? '' : (v == Player.x ? 'X' : 'O')),
+                      ),
+                      GridView.builder(
+                        itemCount: 9,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                        ),
+                        itemBuilder: (_, i) {
+                          final r = i ~/ 3, c = i % 3;
+                          final v = state.board[i];
+                          return InkWell(
+                            onTap: () => _tap(r, c),
+                            child: Center(
+                              child: AnimatedDefaultTextStyle(
+                                duration: const Duration(milliseconds: 120),
+                                style: TextStyle(
+                                  fontSize: 60,
+                                  fontWeight: FontWeight.w900,
+                                  color: v == Player.o ? accentO : cs.primary,
                                 ),
+                                child: Text(v == null ? '' : (v == Player.x ? 'X' : 'O')),
                               ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-                // Buttons
+              // ——— Buttons ———
+              if (state.isComplete) ...[
                 SizedBox(
-                  width: 320,
+                  width: 360,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: const Text('Play Again'),
+                          onPressed: _restart,
+                          style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.home_outlined),
+                          label: const Text('Back to Home'),
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                SizedBox(
+                  width: 360,
                   child: Row(
                     children: [
                       Expanded(
@@ -270,61 +239,42 @@ class _GameScreenState extends State<GameScreen> {
                           icon: const Icon(Icons.undo),
                           label: const Text('Undo'),
                           onPressed: _undoTwo,
+                          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: OutlinedButton.icon(
                           icon: const Icon(Icons.restart_alt),
                           label: const Text('Restart'),
                           onPressed: _restart,
+                          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 SizedBox(
-                  width: 320,
+                  width: 360,
                   child: FilledButton.icon(
                     icon: const Icon(Icons.refresh),
                     label: const Text('Reset Stats'),
                     onPressed: _resetStats,
+                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
                   ),
                 ),
-                const SizedBox(height: 12),
               ],
-            ),
+              const SizedBox(height: 8),
+            ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _statCard(String label, int value, Color color) {
-    return Expanded(
-      child: Container(
-        height: 88,
-        margin: const EdgeInsets.symmetric(horizontal: 6),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color, width: 1.8),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('$value',
-                style:
-                    const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 12)),
-          ],
         ),
       ),
     );
   }
 }
 
+// ------- grid painter -------
 class _GridPainter extends CustomPainter {
   final Color gridColor;
   final double stroke;
@@ -333,27 +283,26 @@ class _GridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p = Paint()
+    final inner = Paint()
       ..color = gridColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke;
-    final o = Paint()
+    final outer = Paint()
       ..color = gridColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = outerStroke;
 
     final w = size.width, h = size.height;
-    final cellW = w / 3, cellH = h / 3;
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), o);
-    canvas.drawLine(Offset(cellW, 0), Offset(cellW, h), p);
-    canvas.drawLine(Offset(cellW * 2, 0), Offset(cellW * 2, h), p);
-    canvas.drawLine(Offset(0, cellH), Offset(w, cellH), p);
-    canvas.drawLine(Offset(0, cellH * 2), Offset(w, cellH * 2), p);
+    final cw = w / 3, ch = h / 3;
+
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), outer);
+    canvas.drawLine(Offset(cw, 0), Offset(cw, h), inner);
+    canvas.drawLine(Offset(cw * 2, 0), Offset(cw * 2, h), inner);
+    canvas.drawLine(Offset(0, ch), Offset(w, ch), inner);
+    canvas.drawLine(Offset(0, ch * 2), Offset(w, ch * 2), inner);
   }
 
   @override
   bool shouldRepaint(covariant _GridPainter old) =>
-      old.gridColor != gridColor ||
-      old.stroke != stroke ||
-      old.outerStroke != outerStroke;
+      old.gridColor != gridColor || old.stroke != stroke || old.outerStroke != outerStroke;
 }
