@@ -35,8 +35,9 @@ class _GameScreenState extends State<GameScreen> {
     final s = await widget.store.load();
     if (!mounted) return;
     setState(() => stats = s);
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Stats reset')));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Stats reset')));
   }
 
   Future<void> _tap(int r, int c) async {
@@ -53,9 +54,15 @@ class _GameScreenState extends State<GameScreen> {
     if (!state.isComplete && state.current == Player.o) {
       List<int>? mv;
       switch (widget.difficulty) {
-        case AIDifficulty.easy:   mv = easyMove(state);    break;
-        case AIDifficulty.medium: mv = medium.move(state); break;
-        case AIDifficulty.hard:   mv = hardMove(state);    break;
+        case AIDifficulty.easy:
+          mv = easyMove(state);
+          break;
+        case AIDifficulty.medium:
+          mv = medium.move(state);
+          break;
+        case AIDifficulty.hard:
+          mv = hardMove(state);
+          break;
       }
       if (mv != null) {
         final m = mv;
@@ -116,7 +123,7 @@ class _GameScreenState extends State<GameScreen> {
         pillTint = const Color(0xFF7F1D1D); // muted dark red
       } else {
         label = 'DRAW!';
-        pillTint = Colors.grey.shade700;    // grey for draw
+        pillTint = Colors.grey.shade700; // grey for draw
       }
     }
 
@@ -139,7 +146,10 @@ class _GameScreenState extends State<GameScreen> {
               // ——— Result pill (only when finished) ———
               if (label != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: pillTint.withValues(alpha: 0.24),
@@ -174,12 +184,52 @@ class _GameScreenState extends State<GameScreen> {
                       GridView.builder(
                         itemCount: 9,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                            ),
                         itemBuilder: (_, i) {
                           final r = i ~/ 3, c = i % 3;
                           final v = state.board[i];
+                          Color textColor = v == Player.o
+                              ? accentO
+                              : cs.primary;
+
+                          // Highlight winning/losing line after game ends
+                          if (state.isComplete) {
+                            final winner = checkWinner(state);
+                            if (winner != null) {
+                              // Get all winning positions
+                              final lines = [
+                                [0, 1, 2],
+                                [3, 4, 5],
+                                [6, 7, 8],
+                                [0, 3, 6],
+                                [1, 4, 7],
+                                [2, 5, 8],
+                                [0, 4, 8],
+                                [2, 4, 6],
+                              ];
+                              final winningLine = lines.firstWhere(
+                                (line) =>
+                                    line.every((p) => state.board[p] == winner),
+                                orElse: () => [],
+                              );
+
+                              if (winningLine.contains(i)) {
+                                if (winner == Player.x) {
+                                  textColor = Colors
+                                      .greenAccent
+                                      .shade400; // green for user win
+                                } else {
+                                  textColor = Colors
+                                      .redAccent
+                                      .shade200; // red for AI win
+                                }
+                              }
+                            }
+                          }
+
                           return InkWell(
                             onTap: () => _tap(r, c),
                             child: Center(
@@ -188,9 +238,11 @@ class _GameScreenState extends State<GameScreen> {
                                 style: TextStyle(
                                   fontSize: 60,
                                   fontWeight: FontWeight.w900,
-                                  color: v == Player.o ? accentO : cs.primary,
+                                  color: textColor,
                                 ),
-                                child: Text(v == null ? '' : (v == Player.x ? 'X' : 'O')),
+                                child: Text(
+                                  v == null ? '' : (v == Player.x ? 'X' : 'O'),
+                                ),
                               ),
                             ),
                           );
@@ -214,7 +266,9 @@ class _GameScreenState extends State<GameScreen> {
                           icon: const Icon(Icons.play_arrow_rounded),
                           label: const Text('Play Again'),
                           onPressed: _restart,
-                          style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -223,7 +277,9 @@ class _GameScreenState extends State<GameScreen> {
                           icon: const Icon(Icons.home_outlined),
                           label: const Text('Back to Home'),
                           onPressed: () => Navigator.pop(context),
-                          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                          ),
                         ),
                       ),
                     ],
@@ -239,7 +295,9 @@ class _GameScreenState extends State<GameScreen> {
                           icon: const Icon(Icons.undo),
                           label: const Text('Undo'),
                           onPressed: _undoTwo,
-                          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -248,7 +306,9 @@ class _GameScreenState extends State<GameScreen> {
                           icon: const Icon(Icons.restart_alt),
                           label: const Text('Restart'),
                           onPressed: _restart,
-                          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                          ),
                         ),
                       ),
                     ],
@@ -261,7 +321,9 @@ class _GameScreenState extends State<GameScreen> {
                     icon: const Icon(Icons.refresh),
                     label: const Text('Reset Stats'),
                     onPressed: _resetStats,
-                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
                   ),
                 ),
               ],
@@ -279,7 +341,11 @@ class _GridPainter extends CustomPainter {
   final Color gridColor;
   final double stroke;
   final double outerStroke;
-  _GridPainter({required this.gridColor, required this.stroke, required this.outerStroke});
+  _GridPainter({
+    required this.gridColor,
+    required this.stroke,
+    required this.outerStroke,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -304,5 +370,7 @@ class _GridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GridPainter old) =>
-      old.gridColor != gridColor || old.stroke != stroke || old.outerStroke != outerStroke;
+      old.gridColor != gridColor ||
+      old.stroke != stroke ||
+      old.outerStroke != outerStroke;
 }
